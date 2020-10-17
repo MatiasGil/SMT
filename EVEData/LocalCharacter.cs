@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -245,6 +246,9 @@ namespace SMT.EVEData
         public int WarningSystemRange { get; set; }
 
         public List<string> WarningSystems { get; set; }
+
+        //public Dictionary<int, List<string>> SystemsMapByJumps { get; set; }
+        public Dictionary<string, int> JumpsOfEachSystem { get; set; }
 
         /// <summary>
         /// Gets or sets the current list of Waypoints
@@ -938,9 +942,10 @@ namespace SMT.EVEData
 
         private void UpdateWarningSystems()
         {
-            if (!string.IsNullOrEmpty(Location) && WarningSystemRange > 0 && DangerzoneActive)
+            if (!string.IsNullOrEmpty(Location) && WarningSystemRange > 0)
             {
                 WarningSystems = Navigation.GetSystemsXJumpsFrom(new List<string>(), Location, WarningSystemRange);
+                JumpsOfEachSystem = Navigation.GetJumpsOfEachSystemInRange(WarningSystemRange, 0, Location);
             }
         }
     }

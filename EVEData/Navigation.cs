@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using Microsoft.SqlServer.Server;
 
 namespace SMT
 {
@@ -69,6 +71,39 @@ namespace SMT.EVEData
                 }
             }
             return sysList;
+        }
+
+        public static Dictionary<string, int> GetJumpsOfEachSystemInRange(int targetJumps,
+            int currentJump,
+            string location)
+        {
+            var jumpsOfEachSystem = new Dictionary<string, int>();
+            if (!MapNodes.ContainsKey(location) || currentJump > targetJumps )
+                return jumpsOfEachSystem;
+            
+            var targetSystemNode = MapNodes[location];
+
+            jumpsOfEachSystem.Add(location, currentJump);
+            
+            foreach (var connectedNode in targetSystemNode.Connections)
+            {
+                var connectedSystems = GetJumpsOfEachSystemInRange(targetJumps, currentJump + 1, connectedNode);
+                foreach (var connectedSystem in connectedSystems)
+                {
+                    if (jumpsOfEachSystem.ContainsKey(connectedSystem.Key))
+                    {
+                        var jumpsInCache = jumpsOfEachSystem[connectedSystem.Key];
+                        if (jumpsInCache > connectedSystem.Value)
+                            jumpsOfEachSystem[connectedSystem.Key] = connectedSystem.Value;
+                    }
+                    else
+                    {
+                        jumpsOfEachSystem.Add(connectedSystem.Key, connectedSystem.Value);
+                    }
+                }
+            }
+
+            return jumpsOfEachSystem;
         }
 
         public static void InitNavigation(List<System> eveSystems, List<JumpBridge> jumpBridges)

@@ -279,6 +279,10 @@ namespace SMT
         [Category("Intel")]
         [DisplayName("Warning Sound")]
         public bool PlayIntelSound { get; set; }
+        
+        [Category("Intel")]
+        [DisplayName("Warning Sound")]
+        public bool SoundByDistanceMode { get; set; }
 
         [Category("Intel")]
         [DisplayName("Warning On Unknown")]

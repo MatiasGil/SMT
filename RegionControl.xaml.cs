@@ -503,7 +503,7 @@ namespace SMT
                     if (ti.DerivedSecurityStatus != null)
                     {
                         Label TrigSecChangeHighlight = new Label();
-                        TrigSecChangeHighlight.Content = "»";
+                        TrigSecChangeHighlight.Content = "Â»";
                         TrigSecChangeHighlight.Foreground = trigSecStatusChangeBrush;
                         TrigSecChangeHighlight.IsHitTestVisible = false;
                         TrigSecChangeHighlight.RenderTransform = new RotateTransform(90);

@@ -93,6 +93,7 @@
                                 <StackPanel>
 
                                     <CheckBox IsChecked="{Binding Path=PlayIntelSound}" Margin="0,2">Warning Sound</CheckBox>
+                                    <CheckBox IsChecked="{Binding Path=SoundByDistanceMode}" Margin="0,2">Sound By Distance Mode</CheckBox>
                                     <CheckBox IsChecked="{Binding Path=PlayIntelSoundOnUnknown}" Margin="0,2">Warning on Unknown</CheckBox>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,2">

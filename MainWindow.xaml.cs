@@ -10,11 +10,13 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Serialization;
@@ -30,8 +32,9 @@ namespace SMT
         public static MainWindow AppWindow;
         private LogonWindow logonBrowserWindow;
 
-        private MediaPlayer mediaPlayer;
         private PreferencesWindow preferencesWindow;
+        
+        private readonly Dictionary<string, MediaPlayer> sounds = new Dictionary<string, MediaPlayer>();
 
         private int uiRefreshCounter = 0;
         private System.Windows.Threading.DispatcherTimer uiRefreshTimer;
@@ -44,9 +47,9 @@ namespace SMT
             AppWindow = this;
             DataContext = this;
 
-            mediaPlayer = new MediaPlayer();
-            Uri woopUri = new Uri(AppDomain.CurrentDomain.BaseDirectory + @"\Sounds\woop.mp3");
-            mediaPlayer.Open(woopUri);
+            AddNewSound("woop", @"\Sounds\woop.mp3");
+            AddNewSound("byJumps", @"\Sounds\byJumps.mp3");
+            AddNewSound("alarm", @"\Sounds\alarm.mp3");
 
             InitializeComponent();
 
@@ -212,6 +215,15 @@ namespace SMT
                 lc.WarningSystemRange = MapConf.WarningRange;
                 lc.Location = "";
             }
+        }
+
+        private void AddNewSound(string soundName, string url)
+        {
+            var mediaPlayer = new MediaPlayer();
+            Uri woopUri = new Uri(AppDomain.CurrentDomain.BaseDirectory + url);
+            mediaPlayer.Open(woopUri);
+            
+            sounds.Add(soundName, mediaPlayer);
         }
 
         /// <summary>
@@ -769,47 +781,105 @@ namespace SMT
 
         private void OnIntelAdded(List<string> intelsystems)
         {
-            bool playSound = false;
-
             if (MapConf.PlayIntelSound)
             {
-                if (MapConf.PlaySoundOnlyInDangerZone)
+                if (MapConf.PlayIntelSoundOnUnknown && intelsystems.Count == 0)
                 {
-                    if (MapConf.PlayIntelSoundOnUnknown && intelsystems.Count == 0)
-                    {
-                        playSound = true;
-                    }
+                    PlaySound("woop");
+                    return;
+                }
+                
+                var nearestSystemReported = -1;
+                if (MapConf.SoundByDistanceMode)
+                {
+                    CheckIfPlayDistinctiveSoundByJumps(intelsystems, nearestSystemReported);
+                }
+                else if (MapConf.PlaySoundOnlyInDangerZone)
+                {
+                    CheckIfPlaySoundInDangerZone(intelsystems);
+                }
+                else PlaySound("woop");
+            }
+        }
 
-                    foreach (string s in intelsystems)
+        private void CheckIfPlayDistinctiveSoundByJumps(List<string> intelsystems, int nearestSystemReported)
+        {
+            foreach (var intelSystem in intelsystems)
+            {
+                foreach (EVEData.LocalCharacter localCharacter in EVEManager.LocalCharacters)
+                {
+                    if (localCharacter.JumpsOfEachSystem.ContainsKey(intelSystem))
                     {
-                        foreach (EVEData.LocalCharacter lc in EVEManager.LocalCharacters)
+                        var jumpsAway = localCharacter.JumpsOfEachSystem[intelSystem];
+                        if (nearestSystemReported == -1 || nearestSystemReported > jumpsAway)
+                            nearestSystemReported = jumpsAway;
+                    }
+                }
+            }
+
+            PlayDistinctiveSoundFor(nearestSystemReported);
+        }
+
+        private void CheckIfPlaySoundInDangerZone(List<string> intelsystems)
+        {
+            bool playSound = false;
+            foreach (string s in intelsystems)
+            {
+                foreach (EVEData.LocalCharacter lc in EVEManager.LocalCharacters)
+                {
+                    if (lc.WarningSystems != null && lc.DangerzoneActive)
+                    {
+                        foreach (string ls in lc.WarningSystems)
                         {
-                            if (lc.WarningSystems != null && lc.DangerzoneActive)
+                            if (ls == s)
                             {
-                                foreach (string ls in lc.WarningSystems)
-                                {
-                                    if (ls == s)
-                                    {
-                                        playSound = true;
-                                        break;
-                                    }
-                                }
+                                playSound = true;
+                                break;
                             }
                         }
                     }
-                }
-                else
-                {
-                    playSound = true;
                 }
             }
 
             if (playSound)
             {
-                mediaPlayer.Stop();
-                mediaPlayer.Position = new TimeSpan(0, 0, 0);
-                mediaPlayer.Play();
+                PlaySound("woop");
             }
+        }
+
+        private void PlayDistinctiveSoundFor(int nearestSystemReported)
+        {
+            PlayAudioAsync(@"\Sounds\woop.mp3", nearestSystemReported, CancellationToken.None);
+        }
+        
+        public async Task PlayAudioAsync(string audioFilePath, int amountOfRepetitions, CancellationToken cancellationToken)
+        {
+            var timeLine = new MediaTimeline(new Uri(audioFilePath));
+            TimeSpan audioLoopDuration = timeLine.Duration.TimeSpan;
+            for (int i = 1; i < amountOfRepetitions; i++)
+            {
+                audioLoopDuration = audioLoopDuration.Add(timeLine.Duration.TimeSpan);
+            }
+            
+            timeLine.RepeatBehavior = RepeatBehavior.Forever;
+            var mediaPlayer = new MediaPlayer();
+            mediaPlayer.Clock = timeLine.CreateClock();
+            mediaPlayer.Clock.Controller.Begin();
+            try
+            {
+                await Task.Delay(audioLoopDuration, cancellationToken);
+            }
+            finally
+            {
+                mediaPlayer.Clock.Controller.Stop();
+            }
+        }
+
+        private void PlaySound(string soundName)
+        {
+            sounds[soundName].Stop();
+            sounds[soundName].Position = new TimeSpan(0, 0, 0);
+            sounds[soundName].Play();
         }
 
         private void RawIntelBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
