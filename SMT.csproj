@@ -109,9 +109,8 @@
     <Reference Include="DotNetProjects.Wpf.Extended.Toolkit, Version=4.6.94.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
       <HintPath>packages\DotNetProjects.Extended.Wpf.Toolkit.4.6.94\lib\net40\DotNetProjects.Wpf.Extended.Toolkit.dll</HintPath>
     </Reference>
-    <Reference Include="ESI.NET, Version=2020.9.3.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>packages\ESI.NET.2020.9.3\lib\net471\ESI.NET.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ESI.NET, Version=2020.10.20.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\ESI.NET.2020.10.20\lib\net471\ESI.NET.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.Configuration, Version=5.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Extensions.Configuration.5.0.0-rc.2.20475.5\lib\net461\Microsoft.Extensions.Configuration.dll</HintPath>
@@ -215,6 +214,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CharactersWindow.xaml.cs">
+      <DependentUpon>CharactersWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="EVEData\Coalition.cs" />
     <Compile Include="EVEData\ESI\CharacterIDData.cs" />
     <Compile Include="EVEData\ESI\CoalitionInfo.cs" />
@@ -251,6 +253,10 @@
       <DependentUpon>UniverseControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils.cs" />
+    <Page Include="CharactersWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="LogonWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
