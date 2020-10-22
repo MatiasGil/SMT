@@ -281,16 +281,17 @@ namespace SMT
         public bool PlayIntelSound { get; set; }
         
         [Category("Intel")]
-        [DisplayName("Warning Sound")]
-        public bool SoundByDistanceMode { get; set; }
-
-        [Category("Intel")]
         [DisplayName("Warning On Unknown")]
         public bool PlayIntelSoundOnUnknown { get; set; }
-
+        
         [Category("Intel")]
         [DisplayName("Limit Sound to Dangerzone")]
         public bool PlaySoundOnlyInDangerZone { get; set; }
+        
+        [Category("Intel")]
+        [DisplayName("Voiced Warnings")]
+        public bool VoicedWarnings { get; set; }
+        
 
         [Category("Incursions")]
         [DisplayName("Show Active Incursions")]

@@ -20,6 +20,8 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using SMT.VoicedWarnings.Core.Services;
+using SMT.VoicedWarnings.Infrastructure.Providers;
 
 namespace SMT
 {
@@ -39,6 +41,8 @@ namespace SMT
         private int uiRefreshCounter = 0;
         private System.Windows.Threading.DispatcherTimer uiRefreshTimer;
 
+        private VoiceService voiceService;
+        
         /// <summary>
         /// Main Window
         /// </summary>
@@ -48,8 +52,8 @@ namespace SMT
             DataContext = this;
 
             AddNewSound("woop", @"\Sounds\woop.mp3");
-            AddNewSound("byJumps", @"\Sounds\byJumps.mp3");
-            AddNewSound("alarm", @"\Sounds\alarm.mp3");
+
+            voiceService = VoiceServicesProvider.ProvideVoiceService();
 
             InitializeComponent();
 
@@ -789,89 +793,39 @@ namespace SMT
                     return;
                 }
                 
-                var nearestSystemReported = -1;
-                if (MapConf.SoundByDistanceMode)
+                if (MapConf.PlaySoundOnlyInDangerZone)
                 {
-                    CheckIfPlayDistinctiveSoundByJumps(intelsystems, nearestSystemReported);
+                    PlaySoundIfInDangerZone(intelsystems);
                 }
-                else if (MapConf.PlaySoundOnlyInDangerZone)
+                else
                 {
-                    CheckIfPlaySoundInDangerZone(intelsystems);
-                }
-                else PlaySound("woop");
+                    PlaySound("woop");
+                } 
             }
         }
-
-        private void CheckIfPlayDistinctiveSoundByJumps(List<string> intelsystems, int nearestSystemReported)
+        
+        private void PlaySoundIfInDangerZone(List<string> intelsystems)
         {
+            var nearestSystemReported = -1;
             foreach (var intelSystem in intelsystems)
             {
-                foreach (EVEData.LocalCharacter localCharacter in EVEManager.LocalCharacters)
-                {
+                foreach (var localCharacter in EVEManager.LocalCharacters)
                     if (localCharacter.JumpsOfEachSystem.ContainsKey(intelSystem))
                     {
                         var jumpsAway = localCharacter.JumpsOfEachSystem[intelSystem];
                         if (nearestSystemReported == -1 || nearestSystemReported > jumpsAway)
                             nearestSystemReported = jumpsAway;
                     }
-                }
             }
 
-            PlayDistinctiveSoundFor(nearestSystemReported);
-        }
-
-        private void CheckIfPlaySoundInDangerZone(List<string> intelsystems)
-        {
-            bool playSound = false;
-            foreach (string s in intelsystems)
+            if (nearestSystemReported > -1)
             {
-                foreach (EVEData.LocalCharacter lc in EVEManager.LocalCharacters)
+                if (MapConf.VoicedWarnings)
                 {
-                    if (lc.WarningSystems != null && lc.DangerzoneActive)
-                    {
-                        foreach (string ls in lc.WarningSystems)
-                        {
-                            if (ls == s)
-                            {
-                                playSound = true;
-                                break;
-                            }
-                        }
-                    }
+                    voiceService.Warn(nearestSystemReported);
                 }
-            }
-
-            if (playSound)
-            {
-                PlaySound("woop");
-            }
-        }
-
-        private void PlayDistinctiveSoundFor(int nearestSystemReported)
-        {
-            PlayAudioAsync(@"\Sounds\woop.mp3", nearestSystemReported, CancellationToken.None);
-        }
-        
-        public async Task PlayAudioAsync(string audioFilePath, int amountOfRepetitions, CancellationToken cancellationToken)
-        {
-            var timeLine = new MediaTimeline(new Uri(audioFilePath));
-            TimeSpan audioLoopDuration = timeLine.Duration.TimeSpan;
-            for (int i = 1; i < amountOfRepetitions; i++)
-            {
-                audioLoopDuration = audioLoopDuration.Add(timeLine.Duration.TimeSpan);
-            }
-            
-            timeLine.RepeatBehavior = RepeatBehavior.Forever;
-            var mediaPlayer = new MediaPlayer();
-            mediaPlayer.Clock = timeLine.CreateClock();
-            mediaPlayer.Clock.Controller.Begin();
-            try
-            {
-                await Task.Delay(audioLoopDuration, cancellationToken);
-            }
-            finally
-            {
-                mediaPlayer.Clock.Controller.Stop();
+                else
+                    PlaySound("woop");
             }
         }
 
